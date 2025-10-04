@@ -1,0 +1,46 @@
+name: Build Snake Game IPA
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          
+      - name: Build iOS (IPA)
+        run: eas build --platform ios --non-interactive --no-wait
+        
+      - name: Build Android (APK) - Optional
+        run: eas build --platform android --non-interactive --no-wait
+        if: false  # Set to true if you want Android builds too
+
+      - name: Lint and Test
+        run: |
+          npm run lint --if-present
+          npm test --if-present
+        continue-on-error: true
